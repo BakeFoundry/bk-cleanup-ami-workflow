@@ -1,0 +1,34 @@
+name: 'BK Cleanup AMI'
+description: 'Deregisters AMIs and deletes associated snapshots for a given application and branch'
+
+inputs:
+  role_to_assume:
+    description: 'AWS IAM role ARN to assume for performing AMI cleanup'
+    required: true
+  application_name:
+    description: 'Application name used to filter AMIs (matched against Name tag)'
+    required: true
+  branch_name:
+    description: 'Sanitized branch name used to filter AMIs (matched against Branch tag)'
+    required: true
+  aws_region:
+    description: 'AWS region where AMIs are located'
+    required: false
+    default: 'us-east-1'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.role_to_assume }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - name: Cleanup AMIs
+      shell: bash
+      env:
+        APPLICATION_NAME: ${{ inputs.application_name }}
+        BRANCH_NAME: ${{ inputs.branch_name }}
+      run: |
+        ${{ github.action_path }}/scripts/cleanup-amis.sh
